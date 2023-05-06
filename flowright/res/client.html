@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en" data-bs-theme="dark">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <script type="text/javascript">
+            class ServerHandler {
+                constructor() {
+                    this.messageMap = new Object();
+                    this.messageQueue = new Array();
+                    this.currentSeq = 1;
+                }
+
+                handleMessage(obj) {
+                    console.log(obj);
+                    // this.messageMap[obj.kind](obj);
+                    this.messageQueue.push(obj);
+                    this.messageQueue.sort(function(a, b) {
+                        if (a.seqno < b.seqno) {
+                            return -1;
+                        }
+                        else if (a.seqno > b.seqno) {
+                            return 1;
+                        }
+                        return 0;
+                    });
+
+                    while (this.messageQueue.length > 0 && this.messageQueue[0].seqno == this.currentSeq) {
+                        let front = this.messageQueue.shift();
+                        if (!(front.kind in this.messageMap)) {
+                            console.error("Invalid Message Kind: ", front.kind);
+                        }
+                        else {
+                            this.messageMap[front.kind](front);
+                        }
+                        this.currentSeq++;
+                    }
+                }
+
+                addMessageListener(kind, fn) {
+                    this.messageMap[kind] = fn;
+                }
+            }
+
+            const onComponentRemoveMessage = function (message) {
+                message.marked_components.forEach(marked_component => {
+                    element = document.getElementById(marked_component);
+                    if (element !== null) {
+                        element.remove();
+                    }
+                });
+            }
+
+            const onComponentUpdateMessage = function (message) {
+                existing_element = document.getElementById(message.component_id);
+                if (existing_element !== null) {
+                    existing_element.innerHTML = message.component_data;
+                }
+                else {
+                    parent = document.getElementById(message.component_parent);
+                    parent.insertAdjacentHTML("beforeend", message.component_data);
+                }
+                existing_element = document.getElementById(message.component_id);
+                Array.from((existing_element.getElementsByTagName("script"))).forEach(element => {
+                    eval(element.textContent);
+                });
+            }
+
+            const onIterationStartMessage = function (message) {
+                if (message.preload_data !== '') {
+                    document.getElementsByTagName("head")[0].insertAdjacentHTML("beforeend", message.preload_data);
+                }
+            }
+
+            serverHandler = new ServerHandler();
+            serverHandler.addMessageListener("ComponentUpdateMessage", onComponentUpdateMessage);
+            serverHandler.addMessageListener("ComponentRemoveMessage", onComponentRemoveMessage);
+            serverHandler.addMessageListener("IterationStartMessage", onIterationStartMessage)
+
+            let socket = undefined;
+            function reloadConnection() {
+                const host = window.location.host;
+                const proto = window.location.protocol;
+                const wsproto = proto === "http:" ? "ws:" : "wss:";
+                let start = new Date().getTime(); 
+
+                if (socket !== undefined && socket.readyState == WebSocket.OPEN) {
+                    socket.close();
+                }
+                socket = new WebSocket(wsproto + "//" + host + "/ws");
+
+                socket.addEventListener("open", onOpen);
+                socket.addEventListener("close", onClose);
+                socket.addEventListener("error", onError);
+                socket.addEventListener("message", onMessage);
+            }
+
+            function closeConnection (event) {
+                if (event.persisted === false && socket !== undefined) {
+                    socket.close();
+                }
+            }
+
+            const onMessage = function (event) {
+                serverMessage = JSON.parse(event.data);
+                // console.log(serverMessage);
+                serverHandler.handleMessage(serverMessage);
+            }
+
+            const onError = function (event) {
+                console.log("Socket error: ", event);
+            }
+
+            const onClose = function (event) {
+                console.log("Socket closed");
+            }
+
+            const onOpen = function (event) {
+                console.log("Socket open");
+            }
+
+            const flush = function (component_id, value, refresh=false) {
+                socket.send(JSON.stringify({
+                    "kind": "ComponentFlushMessage",
+                    "component_id": component_id,
+                    "value": value,
+                    "refresh": refresh,
+                    "seqno": -1,
+                }));
+            }
+
+            window.addEventListener("load", reloadConnection);
+            window.addEventListener("onpagehide" in self ? "pagehide" : "unload", closeConnection);
+        </script>
+    </head>
+    <body>
+        <div id="root"></div>
+    </body>
+</html>
