@@ -168,7 +168,7 @@ class MultiSelectboxComponent(Component[list[T]], config_name='multiselect'):
         self.values = []
 
     def render(self) -> str:
-        options = ''.join(['<option></option>'] + [f'<option value="{id(x)}">{x}</option>' for x in self.options])
+        options = ''.join([f'<option value="{id(x)}">{x}</option>' for x in self.options])
         return self.wrap(f'<select multiple onchange="flush(\'{self.id}\', Array.from(this.querySelectorAll(\'option:checked\'),e=>e.value))" {self._ATTRIBUTES}>{options}</select>', no_attr=True)
 
     def get_value(self) -> list[T]:
