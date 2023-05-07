@@ -103,7 +103,7 @@ class button(Component[bool], config_name='button'):
         self.value = False
 
     def render(self) -> str:
-        return self.wrap(f'<button onclick="flush(\'{self.id}\', true, true)" {self._ATTRIBUTES}>{self.name}</button>', no_attr=True)
+        return self.wrap(f'<button onclick="flush(\'{self.id}\', true)" {self._ATTRIBUTES}>{self.name}</button>', no_attr=True)
     
     def get_value(self) -> bool:
         x = self.value
@@ -121,8 +121,7 @@ class textbox(Component[str], config_name='textbox'):
         self.value: str = ''
 
     def render(self) -> str:
-        # TODO: fix seq numbers so that onchange -> onkeypress
-        return self.wrap(f'<input type="text" onchange="flush(\'{self.id}\', this.value, true)" {self._ATTRIBUTES}>', no_attr=True)
+        return self.wrap(f'<input type="text" onkeypress="flush(\'{self.id}\', this.value)" onkeyup="flush(\'{self.id}\', this.value)" {self._ATTRIBUTES}>', no_attr=True)
     
     def get_value(self) -> str:
         return self.value
@@ -142,7 +141,7 @@ class SelectboxComponent(Component[T], config_name='selectbox'):
 
     def render(self) -> str:
         options = ''.join(['<option></option>'] + [f'<option value="{id(x)}">{x}</option>' for x in self.options])
-        return self.wrap(f'<select onchange="flush(\'{self.id}\', this.value, true)" {self._ATTRIBUTES}>{options}</select>', no_attr=True)
+        return self.wrap(f'<select onchange="flush(\'{self.id}\', this.value)" {self._ATTRIBUTES}>{options}</select>', no_attr=True)
 
     def get_value(self) -> Optional[T]:
         for x in self.options:
@@ -170,7 +169,7 @@ class MultiSelectboxComponent(Component[list[T]], config_name='multiselect'):
 
     def render(self) -> str:
         options = ''.join(['<option></option>'] + [f'<option value="{id(x)}">{x}</option>' for x in self.options])
-        return self.wrap(f'<select multiple onchange="flush(\'{self.id}\', Array.from(this.querySelectorAll(\'option:checked\'),e=>e.value), true)" {self._ATTRIBUTES}>{options}</select>', no_attr=True)
+        return self.wrap(f'<select multiple onchange="flush(\'{self.id}\', Array.from(this.querySelectorAll(\'option:checked\'),e=>e.value))" {self._ATTRIBUTES}>{options}</select>', no_attr=True)
 
     def get_value(self) -> list[T]:
         selected = []
@@ -200,7 +199,7 @@ class checkbox(Component[bool], config_name='checkbox'):
 
     def render(self) -> str:
         check_id = f'{self.id}-checkbox'
-        return self.wrap(f'<input type="checkbox" id="{check_id}" {"checked" if self.value else ""} onchange="flush(\'{self.id}\', this.checked, true)" {self._ATTRIBUTES}><label for="{check_id}">{self.text}</label>')
+        return self.wrap(f'<input type="checkbox" id="{check_id}" {"checked" if self.value else ""} onchange="flush(\'{self.id}\', this.checked)" {self._ATTRIBUTES}><label for="{check_id}">{self.text}</label>')
     
     def get_value(self) -> bool:
         x = self.value
@@ -221,7 +220,7 @@ class RadioComponent(Component[T], config_name='radio'):
         radio_name = self.id
 
         radios = [
-            f'<div {self._CONTAINER_ATTRIBUTES}><input {self._ATTRIBUTES} onchange="flush(\'{self.id}\', [{id(x)}, this.checked], true)" type="radio" name="{radio_name}" id="{id(x)}"><label for="{id(x)}">{x}</label></div>'
+            f'<div {self._CONTAINER_ATTRIBUTES}><input {self._ATTRIBUTES} onchange="flush(\'{self.id}\', [{id(x)}, this.checked])" type="radio" name="{radio_name}" id="{id(x)}"><label for="{id(x)}">{x}</label></div>'
             for x in self.options
         ]
 

@@ -154,7 +154,6 @@ class RenderQueue:
     def hard_reset(self) -> None:
         self.tree_pointer = None
         self.shadow_tree_pointer = None
-        self.seqno = 1
         self.values: dict[str, Any] = {}
 
     def send_message(self, msg: str) -> None:
@@ -168,8 +167,8 @@ class RenderQueue:
         # if self.shadow_tree_pointer is not None and self.tree_pointer is not None:
         #     self.prune(self.shadow_tree_pointer, self.tree_pointer)
         if self.client is not None and self.server is not None:
-            if self.seqno > 1:
-                self.send_message(IterationCompleteMessage(seqno=self.seqno).json())
+            # TODO: maybe check if entering first iteration?
+            self.send_message(IterationCompleteMessage().json())
             msg = self.client.readline()
             obj = {} if len(msg.strip()) == 0 else json.loads(msg)
             while obj.get('kind') != 'IterationStartMessage':
@@ -183,29 +182,24 @@ class RenderQueue:
                     continue
                 obj = json.loads(msg)
             start = IterationStartMessage.parse_obj(obj)
-            self.seqno = start.seqno + 1
             return start
         else:
             raise RuntimeError("Communication pipes not created")
 
     def _update_component(self, component: Component, parent: str = "root") -> None:
         self.send_message(ComponentUpdateMessage(
-            seqno=self.seqno,
             component_id=component.id,
             component_parent=parent,
             component_data=component.render()
         ).json())
-        self.seqno += 1
 
     def _remove_components(self, components: list[Component]) -> None:
         for comp in components:
             if comp.id in self.values:
                 del self.values[comp.id]
         self.send_message(ComponentRemoveMessage(
-            seqno=self.seqno,
             marked_components=[x.id for x in components]
         ).json())
-        self.seqno += 1
 
     def push_child(self, component: Component) -> None:
         if self.tree_pointer is None or self.shadow_tree_pointer is None:

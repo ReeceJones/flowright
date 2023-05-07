@@ -46,7 +46,6 @@ class ServerHandler(WebSocketEndpoint):
     refresh: bool = False
     terminated: bool = False
     client_msg_queue: Optional[asyncio.Queue] = None
-    seqno: int = 1
 
     async def on_connect(self, websocket: WebSocket) -> None:
         await websocket.accept()
@@ -75,9 +74,8 @@ class ServerHandler(WebSocketEndpoint):
         if data.get('kind') == 'ComponentFlushMessage':
             flush_obj = ComponentFlushMessage.parse_obj(data)
             await self.client_msg_queue.put(flush_obj.json())
-            if flush_obj.refresh:
-                self.refresh = True
-                await self._refresh(websocket)
+            self.refresh = True
+            await self._refresh(websocket)
 
     async def on_disconnect(self, websocket: WebSocket, close_code: int) -> None:
         if self.python_client_task is not None:
@@ -127,7 +125,6 @@ class ServerHandler(WebSocketEndpoint):
                     await asyncio.sleep(FIFO_POLL_DELAY)
                     continue
                 obj = json.loads(msg)
-                self.seqno = obj.get('seqno', 0) + 1
                 await websocket.send_text(msg)
                 if obj.get('kind' == 'IterationCompleteMessage'):
                     await self._refresh(websocket)
@@ -139,8 +136,7 @@ class ServerHandler(WebSocketEndpoint):
             await asyncio.sleep(FIFO_POLL_DELAY)
         self.refresh = False
         await asyncio.sleep(RERENDER_DELAY)
-        start_msg = IterationStartMessage(seqno=self.seqno, terminated=self.terminated, preload_data=preload_data)
-        self.seqno += 1
+        start_msg = IterationStartMessage(terminated=self.terminated, preload_data=preload_data)
         await self.client_msg_queue.put(start_msg.json())
         if not self.terminated:
             await websocket.send_text(start_msg.json())

@@ -4,7 +4,6 @@ from typing import Any
 
 class ServerSocketMessage(BaseModel):
     kind: str
-    seqno: int
 
 
 class ComponentUpdateMessage(ServerSocketMessage):
@@ -33,4 +32,3 @@ class ComponentFlushMessage(ServerSocketMessage):
     kind: str = "ComponentFlushMessage"
     component_id: str
     value: Any
-    refresh: bool = False
