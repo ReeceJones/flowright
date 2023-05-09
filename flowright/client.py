@@ -290,3 +290,6 @@ def running() -> bool:
         return False
     RenderQueue.get_instance().reset()
     return True
+
+def get_params() -> dict[str, Any]:
+    return json.loads(os.getenv('PARAMS', '{}'))

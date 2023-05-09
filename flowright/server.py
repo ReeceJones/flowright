@@ -6,7 +6,7 @@ from starlette.websockets import WebSocket
 from starlette.endpoints import WebSocketEndpoint
 
 from flowright.config import FIFO_POLL_DELAY, RERENDER_DELAY
-from flowright.messages import ComponentFlushMessage, IterationStartMessage
+from flowright.messages import ComponentFlushMessage, IterationStartMessage, ConnectionInitiationMessage
 from flowright.customization import build_preload
 
 import os
@@ -47,6 +47,10 @@ class ServerHandler(WebSocketEndpoint):
     terminated: bool = False
     client_msg_queue: Optional[asyncio.Queue] = None
 
+    client_queue_task: Optional[asyncio.Task] = None
+    server_queue_task: Optional[asyncio.Task] = None
+    python_client_task: Optional[asyncio.Task] = None
+
     async def on_connect(self, websocket: WebSocket) -> None:
         await websocket.accept()
 
@@ -64,14 +68,23 @@ class ServerHandler(WebSocketEndpoint):
         self.refresh = True
         await self._refresh(websocket, preload_data=build_preload())
 
-        self.python_client_task = asyncio.create_task(self.handle_python_client('test.py'))
         self.client_queue_task = asyncio.create_task(self.handle_client_queue())
         self.server_queue_task = asyncio.create_task(self.handle_server_queue(websocket))
 
     async def on_receive(self, websocket: WebSocket, data: Any) -> None:
         while self.client_msg_queue is None:
             await asyncio.sleep(FIFO_POLL_DELAY)
-        if data.get('kind') == 'ComponentFlushMessage':
+        if data.get('kind') == 'ConnectionInitiationMessage':
+            print(data)
+            init_message = ConnectionInitiationMessage.parse_obj(data)
+            python_file = f'{init_message.resource[1:]}.py' if init_message.resource != '/' else 'index.py'
+            if not os.path.exists(python_file):
+                print('file does not exist:', python_file)
+                await websocket.close()
+                return
+            
+            self.python_client_task = asyncio.create_task(self.handle_python_client(python_file, init_message.params))
+        elif data.get('kind') == 'ComponentFlushMessage':
             flush_obj = ComponentFlushMessage.parse_obj(data)
             await self.client_msg_queue.put(flush_obj.json())
             self.refresh = True
@@ -81,7 +94,9 @@ class ServerHandler(WebSocketEndpoint):
         if self.python_client_task is not None:
             await self.terminate_client(websocket)
             await asyncio.shield(asyncio.wait_for(self.python_client_task, 10.0))
+        if self.client_queue_task is not None:
             self.client_queue_task.cancel()
+        if self.server_queue_task is not None:
             self.server_queue_task.cancel()
         if self.temp_dir is not None:
             shutil.rmtree(self.temp_dir)
@@ -91,19 +106,20 @@ class ServerHandler(WebSocketEndpoint):
         self.refresh = True
         await self._refresh(websocket)
 
-    async def handle_python_client(self, script_name: str) -> None:
+    async def handle_python_client(self, script_name: str, params: dict[str, Any]) -> None:
         while self.client_fifo is None or self.server_fifo is None:
             await asyncio.sleep(FIFO_POLL_DELAY)
         env = os.environ.copy()
         env.update({
             'CLIENT_FIFO': self.client_fifo,
-            'SERVER_FIFO': self.server_fifo
+            'SERVER_FIFO': self.server_fifo,
+            'PARAMS': json.dumps(params)
         })
         p = await asyncio.create_subprocess_shell(f"python3 {script_name}", shell=True, env=env)
         logging.info("Client terminated with return code:", p.returncode)
     
     async def handle_client_queue(self) -> None:
-        while self.client_fifo is None or self.client_msg_queue is None:
+        while self.client_fifo is None or self.client_msg_queue is None or self.python_client_task is None:
             await asyncio.sleep(FIFO_POLL_DELAY)
         try:
             async with aiofiles.open(self.client_fifo, 'w') as client:
@@ -116,7 +132,7 @@ class ServerHandler(WebSocketEndpoint):
             pass
 
     async def handle_server_queue(self, websocket: WebSocket) -> None:
-        while self.server_fifo is None or self.client_msg_queue is None:
+        while self.server_fifo is None or self.client_msg_queue is None or self.python_client_task is None:
             await asyncio.sleep(FIFO_POLL_DELAY)
         async with aiofiles.open(self.server_fifo, 'r') as server:
             while True:
@@ -143,6 +159,6 @@ class ServerHandler(WebSocketEndpoint):
         
 
 app = Starlette(debug=True, routes=[
-    Route("/", serve_client),
+    Route("/{url:path}", serve_client),
     WebSocketRoute("/ws", ServerHandler)
 ])

@@ -6,6 +6,12 @@ class ServerSocketMessage(BaseModel):
     kind: str
 
 
+class ConnectionInitiationMessage(ServerSocketMessage):
+    kind: str = "ConnectionInitiationMessage"
+    resource: str
+    params: dict[str, Any]
+
+
 class ComponentUpdateMessage(ServerSocketMessage):
     kind: str = "ComponentUpdateMessage"
     component_id: str

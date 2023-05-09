@@ -103,6 +103,16 @@
 
             const onOpen = function (event) {
                 console.log("Socket open");
+                const params = new Map();
+                const url = new URL(window.location.toLocaleString());
+                for (const param of url.searchParams.entries()) {
+                    params[param[0]] = JSON.parse(param[1]);
+                }
+                socket.send(JSON.stringify({
+                    "kind": "ConnectionInitiationMessage",
+                    "resource": window.location.pathname,
+                    "params": params
+                }))
             }
 
             const flush = function (component_id, value) {
