@@ -76,6 +76,9 @@ _default_attribute_map = {
             'button': {
                 'attributes': {
                     'class': 'btn btn-primary'
+                },
+                'container-attributes': {
+                    'class': 'my-2'
                 }
             },
             'selectbox': {

@@ -103,7 +103,7 @@ class button(Component[bool], config_name='button'):
         self.value = False
 
     def render(self) -> str:
-        return self.wrap(f'<button onclick="flush(\'{self.id}\', true)" {self._ATTRIBUTES}>{self.name}</button>', no_attr=True)
+        return self.wrap(f'<button onclick="flush(\'{self.id}\', true)" {self._ATTRIBUTES}>{self.name}</button>')
     
     def get_value(self) -> bool:
         x = self.value
