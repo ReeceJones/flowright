@@ -77,8 +77,9 @@ class ServerHandler(WebSocketEndpoint):
         if data.get('kind') == 'ConnectionInitiationMessage':
             print(data)
             init_message = ConnectionInitiationMessage.parse_obj(data)
-            python_file = f'{init_message.resource[1:]}.py' if init_message.resource != '/' else 'index.py'
-            if not os.path.exists(python_file):
+            cwd = os.path.join(os.path.abspath(os.path.curdir), 'app')
+            python_file = os.path.join(cwd, f'{init_message.resource[1:]}.py' if init_message.resource != '/' else 'index.py')
+            if not os.path.exists(python_file) or os.path.commonpath([python_file, cwd]) != cwd:
                 print('file does not exist:', python_file)
                 await websocket.close()
                 return

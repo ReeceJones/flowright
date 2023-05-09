@@ -1,4 +1,4 @@
-from flowright.messages import ComponentFlushMessage, ComponentRemoveMessage, ComponentUpdateMessage, IterationCompleteMessage, IterationStartMessage
+from flowright.messages import ComponentFlushMessage, ComponentRemoveMessage, ComponentUpdateMessage, IterationCompleteMessage, IterationStartMessage, PageRedirectMessage
 from flowright.customization import build_attributes, build_container_attributes
 from flowright.config import FIFO_POLL_DELAY
 
@@ -9,6 +9,7 @@ import os
 import copy
 import json
 import time
+import urllib.parse
 
 from typing import Generic, Any, Callable, TypeVar, ParamSpec, Optional, Generator
 
@@ -282,7 +283,18 @@ class RenderQueue:
         if len(parent_pointer.children) < 1:
             return None
         return parent_pointer.children[-1].component
-    
+
+
+def get_redirect(path: str, params: Optional[dict[str, Any]] = None) -> str:
+    if params is None or len(params) == 0:
+        return urllib.parse.quote(f'/{path}')
+    return f'/{urllib.parse.quote(path)}?' + '&'.join(f'{urllib.parse.quote(k)}={urllib.parse.quote(json.dumps(v))}' for k, v in params.items())
+
+
+def redirect(path: str, params: Optional[dict[str, Any]] = None) -> None:
+    redirect_url = get_redirect(path, params)
+    RenderQueue.get_instance().send_message(PageRedirectMessage(url=redirect_url).json())
+
 
 def running() -> bool:
     msg = RenderQueue.get_instance().recv_message()

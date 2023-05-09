@@ -290,3 +290,13 @@ def columns(cols: Iterable[T], header: bool = False) -> Generator[T, None, None]
         yield i
         RenderQueue.get_instance().pop_parent()
 
+
+@component
+class link(Component[None], config_name='link'):
+    def __init__(self, text: str, link: str) -> None:
+        super().__init__(text=text, link=link)
+        self.text = text
+        self.link = link
+
+    def render(self) -> str:
+        return self.wrap(f'<a href={self.link}>{self.text}</a>')

@@ -1,4 +1,4 @@
-test.py
+app/
 poetry.lock
 venv/
 __pycache__/

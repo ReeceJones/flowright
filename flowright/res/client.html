@@ -58,10 +58,15 @@
                 }
             }
 
+            const onPageRedirectMessage = function (message) {
+                window.location = message.url;
+            }
+
             serverHandler = new ServerHandler();
             serverHandler.addMessageListener("ComponentUpdateMessage", onComponentUpdateMessage);
             serverHandler.addMessageListener("ComponentRemoveMessage", onComponentRemoveMessage);
-            serverHandler.addMessageListener("IterationStartMessage", onIterationStartMessage)
+            serverHandler.addMessageListener("IterationStartMessage", onIterationStartMessage);
+            serverHandler.addMessageListener("PageRedirectMessage", onPageRedirectMessage);
 
             let socket = undefined;
             function reloadConnection() {

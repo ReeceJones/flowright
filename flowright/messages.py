@@ -12,6 +12,11 @@ class ConnectionInitiationMessage(ServerSocketMessage):
     params: dict[str, Any]
 
 
+class PageRedirectMessage(ServerSocketMessage):
+    kind: str = "PageRedirectMessage"
+    url: str
+
+
 class ComponentUpdateMessage(ServerSocketMessage):
     kind: str = "ComponentUpdateMessage"
     component_id: str
