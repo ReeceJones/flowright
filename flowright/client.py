@@ -175,7 +175,7 @@ class RenderQueue:
             while obj.get('kind') != 'IterationStartMessage':
                 if obj.get('kind') == 'ComponentFlushMessage':
                     flush_msg = ComponentFlushMessage(**obj)
-                    print(flush_msg)
+                    # print(flush_msg)
                     self.values[flush_msg.component_id] = flush_msg.value
                 msg = self.client.readline()
                 if len(msg.strip()) == 0:

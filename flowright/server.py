@@ -75,12 +75,12 @@ class ServerHandler(WebSocketEndpoint):
         while self.client_msg_queue is None:
             await asyncio.sleep(FIFO_POLL_DELAY)
         if data.get('kind') == 'ConnectionInitiationMessage':
-            print(data)
+            # print(data)
             init_message = ConnectionInitiationMessage.parse_obj(data)
             cwd = os.path.join(os.path.abspath(os.path.curdir), 'app')
             python_file = os.path.join(cwd, f'{init_message.resource[1:]}.py' if init_message.resource != '/' else 'index.py')
             if not os.path.exists(python_file) or os.path.commonpath([python_file, cwd]) != cwd:
-                print('file does not exist:', python_file)
+                # print('file does not exist:', python_file)
                 await websocket.close()
                 return
             

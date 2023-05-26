@@ -1,7 +1,8 @@
 from flowright.client import Component, component, RenderQueue
 
 import contextlib
-import json
+
+import markdown as python_markdown
 
 from typing import Any, Generator, Iterable, TypeVar, Generic, Optional, overload
 
@@ -180,7 +181,6 @@ class MultiSelectboxComponent(Component[list[T]], config_name='multiselect'):
         return selected
     
     def set_value(self, value: str) -> None:
-        print(f'{value=}')
         self.values = [int(x) for x in value if x != '']
 
 
@@ -300,3 +300,38 @@ class link(Component[None], config_name='link'):
 
     def render(self) -> str:
         return self.wrap(f'<a href={self.link}>{self.text}</a>')
+
+
+@component
+class markdown(Component[None], config_name='markdown'):
+    def __init__(self, text: str) -> None:
+        super().__init__(text=text)
+        self.text = text
+
+    def render(self) -> str:
+        return self.wrap(python_markdown.markdown(self.text, extensions=['fenced_code', 'tables', 'toc', 'smarty', 'codehilite']))
+
+
+@component
+class html(Component[None], config_name='html'):
+    def __init__(self, text: str) -> None:
+        super().__init__(text=text)
+        self.text = text
+
+    def render(self) -> str:
+        return self.wrap(self.text)
+
+
+class TextRenderProcessor:
+    def __init__(self, contents: str) -> None:
+        self._contents = contents
+
+    def markdown(self) -> None:
+        markdown(self._contents)
+
+    def html(self) -> None:
+        html(self._contents)
+
+
+def render(contents: str) -> TextRenderProcessor:
+    return TextRenderProcessor(contents)
