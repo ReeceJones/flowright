@@ -128,6 +128,15 @@
                 }));
             }
 
+            const flush_raw = function (component_id, value, force_refresh) {
+                socket.send(JSON.stringify({
+                    "kind": "ComponentFlushMessage",
+                    "component_id": component_id,
+                    "value": value,
+                    "force_refresh": force_refresh
+                }));
+            }
+
             window.addEventListener("load", reloadConnection);
             window.addEventListener("onpagehide" in self ? "pagehide" : "unload", closeConnection);
         </script>

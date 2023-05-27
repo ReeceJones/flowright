@@ -43,3 +43,4 @@ class ComponentFlushMessage(ServerSocketMessage):
     kind: str = "ComponentFlushMessage"
     component_id: str
     value: Any
+    force_refresh: bool = False

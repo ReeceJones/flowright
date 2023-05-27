@@ -165,8 +165,6 @@ class RenderQueue:
             raise RuntimeError("Server pipe not created")
 
     def recv_message(self) -> IterationStartMessage:
-        # if self.shadow_tree_pointer is not None and self.tree_pointer is not None:
-        #     self.prune(self.shadow_tree_pointer, self.tree_pointer)
         if self.client is not None and self.server is not None:
             # TODO: maybe check if entering first iteration?
             self.send_message(IterationCompleteMessage().json())
