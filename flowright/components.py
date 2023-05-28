@@ -4,7 +4,7 @@ import contextlib
 
 import markdown as python_markdown
 
-from typing import Any, Generator, Iterable, TypeVar, Generic, Optional, overload
+from typing import Any, Generator, Iterable, TypeVar, Generic, Optional, overload, Union, Type
 
 
 T = TypeVar('T')
@@ -112,6 +112,26 @@ class button(Component[bool], config_name='button'):
         return x
     
     def set_value(self, value: bool) -> None:
+        self.value = value
+
+
+@component
+class slider(Component[int], config_name='slider'):
+    def __init__(self, min_value: int = 0, max_value: int = 100, step: int = 10, label: bool = True) -> None:
+        super().__init__(min_value=min_value, max_value=max_value, step=step, label=label)
+        self.label = label
+        self.value = min_value
+        self.min_value = min_value
+        self.max_value = max_value
+        self.step = step
+
+    def render(self) -> str:
+        return self.wrap(f'<input type="range" min="{self.min_value}" max="{self.max_value}" step="{self.step}" onchange="flush(\'{self.id}\', this.value)" {self._ATTRIBUTES}>', no_attr=True)
+    
+    def get_value(self) -> int:
+        return self.value
+    
+    def set_value(self, value: int) -> None:
         self.value = value
 
 

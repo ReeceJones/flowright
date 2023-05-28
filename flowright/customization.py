@@ -100,6 +100,11 @@ _default_attribute_map = {
                 'attributes': {
                     'class': 'form-control form-select'
                 }
+            },
+            'slider': {
+                'attributes': {
+                    'class': 'form-range'
+                }
             }
         }
     }
