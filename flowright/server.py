@@ -17,6 +17,7 @@ import logging
 import tempfile
 import json
 import shutil
+import watchfiles
 
 from typing import Optional, Any
 
@@ -112,7 +113,7 @@ class ServerHandler(WebSocketEndpoint):
         await self._refresh(websocket)
 
     async def handle_python_client(self, script_name: str, params: dict[str, Any]) -> None:
-        while self.client_fifo is None or self.server_fifo is None:
+        while self.client_fifo is None or self.server_fifo is None or self.client_msg_queue is None:
             await asyncio.sleep(config.FIFO_POLL_DELAY)
         env = os.environ.copy()
         env.update({
@@ -120,8 +121,20 @@ class ServerHandler(WebSocketEndpoint):
             'SERVER_FIFO': self.server_fifo,
             'PARAMS': json.dumps(params)
         })
-        p = await asyncio.create_subprocess_shell(f"python3 {script_name}", shell=True, env=env)
-        logging.info("Client terminated with return code:", p.returncode)
+        reload = os.getenv('FLOWRIGHT_RELOAD', 'False') == 'True'
+        if reload:
+            python_task = asyncio.create_task(asyncio.create_subprocess_shell(f"python3 {script_name}", shell=True, env=env))
+            try:
+                await anext(watchfiles.awatch(script_name))
+                if not self.terminated:
+                    reload_msg = IterationStartMessage(terminated=True, reload=True)
+                    await self.client_msg_queue.put(reload_msg.json())
+                    await asyncio.wait([python_task])
+            except asyncio.CancelledError:
+                pass
+        else:
+            p = await asyncio.create_subprocess_shell(f"python3 {script_name}", shell=True, env=env)
+            logging.info("Client terminated with return code:", p.returncode)
     
     async def handle_client_queue(self) -> None:
         while self.client_fifo is None or self.client_msg_queue is None or self.python_client_task is None:

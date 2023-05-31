@@ -50,7 +50,10 @@
             }
 
             const onIterationStartMessage = function (message) {
-                if (message.preload_data !== '') {
+                if (message.reload === true) {
+                    window.location.reload();
+                }
+                else if (message.preload_data !== '') {
                     document.getElementsByTagName("head")[0].insertAdjacentHTML("beforeend", message.preload_data);
                     Array.from((document.getElementsByTagName("head")[0].getElementsByTagName("script"))).forEach(element => {
                         eval(element.textContent);

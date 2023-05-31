@@ -105,6 +105,19 @@ _default_attribute_map = {
                 'attributes': {
                     'class': 'form-range'
                 }
+            },
+            'overlay': {
+                'container-attributes': {
+                    'class': 'z-2',
+                    'style': 'display: block; width: 100%; height: 100%; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0.0, 0.0, 0.0, 0.5);'
+                }
+            },
+            'dialog': {
+                'container-attributes': {
+                    'class': 'z-3 container w-50 rounded bg-body border border-1',
+                    'style': 'top: 25%',
+                    'open': ''
+                }
             }
         }
     }

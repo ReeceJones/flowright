@@ -181,6 +181,8 @@ class RenderQueue:
                     continue
                 obj = json.loads(msg)
             start = IterationStartMessage.parse_obj(obj)
+            # print(start)
+            self.send_message(start.json())
             return start
         else:
             raise RuntimeError("Communication pipes not created")

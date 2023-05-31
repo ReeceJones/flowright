@@ -15,6 +15,12 @@ aiofiles = "^23.1.0"
 uvloop = "^0.17.0"
 markdown = "^3.4.3"
 pygments = "^2.15.1"
+watchfiles = "^0.19.0"
+
+
+[tool.poetry.scripts]
+flowright = 'flowright.commands:run'
+flowright_test = 'flowright.commands:run'
 
 
 [build-system]

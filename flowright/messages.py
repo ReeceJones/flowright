@@ -32,6 +32,7 @@ class ComponentRemoveMessage(ServerSocketMessage):
 class IterationStartMessage(ServerSocketMessage):
     kind: str = "IterationStartMessage"
     terminated: bool
+    reload: bool = False
     preload_data: str = ''
 
 

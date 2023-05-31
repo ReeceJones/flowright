@@ -117,9 +117,8 @@ class button(Component[bool], config_name='button'):
 
 @component
 class slider(Component[int], config_name='slider'):
-    def __init__(self, min_value: int = 0, max_value: int = 100, step: int = 10, label: bool = True) -> None:
-        super().__init__(min_value=min_value, max_value=max_value, step=step, label=label)
-        self.label = label
+    def __init__(self, min_value: int = 0, max_value: int = 100, step: int = 10) -> None:
+        super().__init__(min_value=min_value, max_value=max_value, step=step)
         self.value = min_value
         self.min_value = min_value
         self.max_value = max_value
@@ -355,3 +354,34 @@ class TextRenderProcessor:
 
 def render(contents: str) -> TextRenderProcessor:
     return TextRenderProcessor(contents)
+
+
+class OverlayComponent(Component[None], config_name='overlay'):
+    def __init__(self):
+        super().__init__()
+
+    def render(self) -> str:
+        return self.wrap('')
+
+
+class DialogComponent(Component[None], config_name='dialog'):
+    def __init__(self):
+        super().__init__()
+    
+    def render(self) -> str:
+        return self.wrap('', tag='dialog')
+    
+
+@contextlib.contextmanager
+def dialog():
+    try:
+        o = OverlayComponent()
+        d = DialogComponent()
+        RenderQueue.get_instance().push_child(o)
+        RenderQueue.get_instance().push_parent()
+        RenderQueue.get_instance().push_child(d)
+        RenderQueue.get_instance().push_parent()
+        yield None
+    finally:
+        RenderQueue.get_instance().pop_parent()
+        RenderQueue.get_instance().pop_parent()
