@@ -38,6 +38,7 @@ class IterationStartMessage(ServerSocketMessage):
 
 class IterationCompleteMessage(ServerSocketMessage):
     kind: str = "IterationCompleteMessage"
+    force_refresh: bool = False
 
 
 class ComponentFlushMessage(ServerSocketMessage):

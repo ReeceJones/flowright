@@ -112,9 +112,22 @@ class ServerHandler(WebSocketEndpoint):
         self.refresh = True
         await self._refresh(websocket)
 
+    async def detect_changes(self, script_name: str) -> None:
+        while self.client_msg_queue is None:
+            await asyncio.sleep(config.FIFO_POLL_DELAY)
+        
+        async for change_set in watchfiles.awatch(script_name, yield_on_timeout=True):
+            if len(change_set) > 0:
+                break
+
+        if not self.terminated:
+            reload_msg = IterationStartMessage(terminated=True, reload=True)
+            await self.client_msg_queue.put(reload_msg.json())
+
     async def handle_python_client(self, script_name: str, params: dict[str, Any]) -> None:
         while self.client_fifo is None or self.server_fifo is None or self.client_msg_queue is None:
             await asyncio.sleep(config.FIFO_POLL_DELAY)
+
         env = os.environ.copy()
         env.update({
             'CLIENT_FIFO': self.client_fifo,
@@ -122,18 +135,12 @@ class ServerHandler(WebSocketEndpoint):
             'PARAMS': json.dumps(params)
         })
         reload = os.getenv('FLOWRIGHT_RELOAD', 'False') == 'True'
-        if reload:
-            python_task = asyncio.create_task(asyncio.create_subprocess_shell(f"python3 {script_name}", shell=True, env=env))
-            try:
-                await anext(watchfiles.awatch(script_name))
-                if not self.terminated:
-                    reload_msg = IterationStartMessage(terminated=True, reload=True)
-                    await self.client_msg_queue.put(reload_msg.json())
-                    await asyncio.wait([python_task])
-            except asyncio.CancelledError:
-                pass
-        else:
-            p = await asyncio.create_subprocess_shell(f"python3 {script_name}", shell=True, env=env)
+        async with asyncio.TaskGroup() as tg:
+            if reload:
+                tg.create_task(self.detect_changes(script_name))
+            
+            python_task = tg.create_task(asyncio.create_subprocess_shell(f"python3 {script_name}", shell=True, env=env))
+            p = await python_task
             logging.info("Client terminated with return code:", p.returncode)
     
     async def handle_client_queue(self) -> None:
@@ -160,8 +167,10 @@ class ServerHandler(WebSocketEndpoint):
                     continue
                 obj = json.loads(msg)
                 await websocket.send_text(msg)
-                if obj.get('kind' == 'IterationCompleteMessage'):
-                    await self._refresh(websocket)
+                if obj.get('kind') == 'IterationCompleteMessage':
+                    if obj.get('force_refresh', False):
+                        self.refresh = True
+                        await self._refresh(websocket)
 
     async def _refresh(self, websocket: WebSocket, preload_data: str = '') -> None:
         if self.client_msg_queue is None:

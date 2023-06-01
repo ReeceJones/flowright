@@ -125,7 +125,7 @@ class slider(Component[int], config_name='slider'):
         self.step = step
 
     def render(self) -> str:
-        return self.wrap(f'<input type="range" min="{self.min_value}" max="{self.max_value}" step="{self.step}" onchange="flush(\'{self.id}\', this.value)" {self._ATTRIBUTES}>', no_attr=True)
+        return self.wrap(f'<input type="range" min="{self.min_value}" max="{self.max_value}" step="{self.step}" onchange="flush(\'{self.id}\', this.value)" {self._ATTRIBUTES}>')
     
     def get_value(self) -> int:
         return self.value
@@ -141,7 +141,7 @@ class textbox(Component[str], config_name='textbox'):
         self.value: str = ''
 
     def render(self) -> str:
-        return self.wrap(f'<input type="text" onkeypress="flush(\'{self.id}\', this.value)" onkeyup="flush(\'{self.id}\', this.value)" {self._ATTRIBUTES}>', no_attr=True)
+        return self.wrap(f'<input type="text" onkeypress="flush(\'{self.id}\', this.value)" onkeyup="flush(\'{self.id}\', this.value)" {self._ATTRIBUTES}>')
     
     def get_value(self) -> str:
         return self.value
@@ -161,7 +161,7 @@ class SelectboxComponent(Component[T], config_name='selectbox'):
 
     def render(self) -> str:
         options = ''.join(['<option></option>'] + [f'<option value="{id(x)}">{x}</option>' for x in self.options])
-        return self.wrap(f'<select onchange="flush(\'{self.id}\', this.value)" {self._ATTRIBUTES}>{options}</select>', no_attr=True)
+        return self.wrap(f'<select onchange="flush(\'{self.id}\', this.value)" {self._ATTRIBUTES}>{options}</select>')
 
     def get_value(self) -> Optional[T]:
         for x in self.options:
@@ -189,7 +189,7 @@ class MultiSelectboxComponent(Component[list[T]], config_name='multiselect'):
 
     def render(self) -> str:
         options = ''.join([f'<option value="{id(x)}">{x}</option>' for x in self.options])
-        return self.wrap(f'<select multiple onchange="flush(\'{self.id}\', Array.from(this.querySelectorAll(\'option:checked\'),e=>e.value))" {self._ATTRIBUTES}>{options}</select>', no_attr=True)
+        return self.wrap(f'<select multiple onchange="flush(\'{self.id}\', Array.from(this.querySelectorAll(\'option:checked\'),e=>e.value))" {self._ATTRIBUTES}>{options}</select>')
 
     def get_value(self) -> list[T]:
         selected = []
@@ -243,7 +243,7 @@ class RadioComponent(Component[T], config_name='radio'):
             for x in self.options
         ]
 
-        return self.wrap(''.join(radios), no_attr=True)
+        return self.wrap(''.join(radios))
     
     def get_value(self) -> Optional[T]:
         for x in self.options:

@@ -132,6 +132,7 @@ class RenderQueue:
             self.client = None
 
         self.values: dict[str, Any] = {}
+        self.force_refresh = True
 
         self.tree_pointer: Optional[RenderTree] = None
         self.shadow_tree_pointer: Optional[RenderTree] = None
@@ -153,6 +154,7 @@ class RenderQueue:
         self.push_child(RootComponent())
 
     def hard_reset(self) -> None:
+        self.force_refresh = True
         self.tree_pointer = None
         self.shadow_tree_pointer = None
         self.values: dict[str, Any] = {}
@@ -166,8 +168,8 @@ class RenderQueue:
 
     def recv_message(self) -> IterationStartMessage:
         if self.client is not None and self.server is not None:
-            # TODO: maybe check if entering first iteration?
-            self.send_message(IterationCompleteMessage().json())
+            self.send_message(IterationCompleteMessage(force_refresh=self.force_refresh).json())
+            self.force_refresh = False
             msg = self.client.readline()
             obj = {} if len(msg.strip()) == 0 else json.loads(msg)
             while obj.get('kind') != 'IterationStartMessage':
@@ -305,3 +307,7 @@ def running() -> bool:
 
 def get_params() -> dict[str, Any]:
     return json.loads(os.getenv('PARAMS', '{}'))
+
+
+def refresh() -> None:
+    RenderQueue().get_instance().force_refresh = True

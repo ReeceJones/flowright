@@ -59,7 +59,7 @@ _default_attribute_map = {
             },
             'checkbox': {
                 'container-attributes': {
-                    'class': 'form-check'
+                    'class': 'form-check my-2'
                 },
                 'attributes': {
                     'class': 'form-check-input'
@@ -67,7 +67,7 @@ _default_attribute_map = {
             },
             'radio': {
                 'container-attributes': {
-                    'class': 'form-check'
+                    'class': 'form-check my-2'
                 },
                 'attributes': {
                     'class': 'form-check-input'
@@ -84,11 +84,17 @@ _default_attribute_map = {
             'selectbox': {
                 'attributes': {
                     'class': 'form-control form-select'
+                },
+                'container-attributes': {
+                    'class': 'my-2'
                 }
             },
             'textbox': {
                 'attributes': {
                     'class': 'form-control'
+                },
+                'container-attributes': {
+                    'class': 'my-2'
                 }
             },
             'image': {
@@ -99,11 +105,17 @@ _default_attribute_map = {
             'multiselect': {
                 'attributes': {
                     'class': 'form-control form-select'
+                },
+                'container-attributes': {
+                    'class': 'my-2'
                 }
             },
             'slider': {
                 'attributes': {
                     'class': 'form-range'
+                },
+                'container-attributes': {
+                    'class': 'my-2'
                 }
             },
             'overlay': {
