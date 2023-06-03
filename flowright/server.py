@@ -82,9 +82,10 @@ class ServerHandler(WebSocketEndpoint):
             # print(data)
             init_message = ConnectionInitiationMessage.parse_obj(data)
             cwd = os.path.join(os.path.abspath(os.path.curdir), 'app')
-            python_file = os.path.join(cwd, f'{init_message.resource[1:]}.py' if init_message.resource != '/' else 'index.py')
+            resource = websocket.path_params.get('url', '/')
+            python_file = os.path.join(cwd, f'{resource}.py' if resource not in {'', '/'} else 'index.py')
             if not os.path.exists(python_file) or os.path.commonpath([python_file, cwd]) != cwd:
-                # print('file does not exist:', python_file)
+                print('file does not exist:', python_file)
                 await websocket.close()
                 return
             
@@ -99,7 +100,10 @@ class ServerHandler(WebSocketEndpoint):
     async def on_disconnect(self, websocket: WebSocket, close_code: int) -> None:
         if self.python_client_task is not None:
             await self.terminate_client(websocket)
-            await asyncio.shield(asyncio.wait_for(self.python_client_task, 10.0))
+            try:
+                await asyncio.wait_for(self.python_client_task, 5.0)
+            except TimeoutError:
+                self.python_client_task.cancel()
         if self.client_queue_task is not None:
             self.client_queue_task.cancel()
         if self.server_queue_task is not None:
@@ -192,5 +196,5 @@ class ServerHandler(WebSocketEndpoint):
 
 app = Starlette(debug=True, routes=[
     Route("/{url:path}", serve_client),
-    WebSocketRoute("/ws", ServerHandler)
+    WebSocketRoute("/{url:path}", ServerHandler)
 ])

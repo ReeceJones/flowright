@@ -8,7 +8,6 @@ class ServerSocketMessage(BaseModel):
 
 class ConnectionInitiationMessage(ServerSocketMessage):
     kind: str = "ConnectionInitiationMessage"
-    resource: str
     params: dict[str, Any]
 
 

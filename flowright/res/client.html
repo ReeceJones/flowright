@@ -74,6 +74,7 @@
             let socket = undefined;
             function reloadConnection() {
                 const host = window.location.host;
+                const path = window.location.pathname;
                 const proto = window.location.protocol;
                 const wsproto = proto === "http:" ? "ws:" : "wss:";
                 let start = new Date().getTime(); 
@@ -81,7 +82,7 @@
                 if (socket !== undefined && socket.readyState == WebSocket.OPEN) {
                     socket.close();
                 }
-                socket = new WebSocket(wsproto + "//" + host + "/ws");
+                socket = new WebSocket(wsproto + "//" + host + path);
 
                 socket.addEventListener("open", onOpen);
                 socket.addEventListener("close", onClose);
@@ -118,7 +119,6 @@
                 }
                 socket.send(JSON.stringify({
                     "kind": "ConnectionInitiationMessage",
-                    "resource": window.location.pathname,
                     "params": params
                 }))
             }

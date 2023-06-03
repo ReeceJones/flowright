@@ -2,6 +2,7 @@ from flowright.client import Component, component, RenderQueue
 
 import contextlib
 
+import html as python_html
 import markdown as python_markdown
 
 from typing import Any, Generator, Iterable, TypeVar, Generic, Optional, overload, Union, Type
@@ -17,7 +18,7 @@ class text(Component[None], config_name='text'):
         self.content = content
 
     def render(self) -> str:
-        return self.wrap(self.content)
+        return self.wrap(python_html.escape(self.content))
 
 
 class ColumnContainerComponent(Component[None], config_name='column-container'):
@@ -104,7 +105,7 @@ class button(Component[bool], config_name='button'):
         self.value = False
 
     def render(self) -> str:
-        return self.wrap(f'<button onclick="flush_raw(\'{self.id}\', true, true)" {self._ATTRIBUTES}>{self.name}</button>')
+        return self.wrap(f'<button onclick="flush_raw(\'{self.id}\', true, true)" {self._ATTRIBUTES}>{python_html.escape(self.name)}</button>')
     
     def get_value(self) -> bool:
         x = self.value
@@ -160,7 +161,7 @@ class SelectboxComponent(Component[T], config_name='selectbox'):
         self.value = None
 
     def render(self) -> str:
-        options = ''.join(['<option></option>'] + [f'<option value="{id(x)}">{x}</option>' for x in self.options])
+        options = ''.join(['<option></option>'] + [f'<option value="{id(x)}">{python_html.escape(str(x))}</option>' for x in self.options])
         return self.wrap(f'<select onchange="flush(\'{self.id}\', this.value)" {self._ATTRIBUTES}>{options}</select>')
 
     def get_value(self) -> Optional[T]:
@@ -188,7 +189,7 @@ class MultiSelectboxComponent(Component[list[T]], config_name='multiselect'):
         self.values = []
 
     def render(self) -> str:
-        options = ''.join([f'<option value="{id(x)}">{x}</option>' for x in self.options])
+        options = ''.join([f'<option value="{id(x)}">{python_html.escape(str(x))}</option>' for x in self.options])
         return self.wrap(f'<select multiple onchange="flush(\'{self.id}\', Array.from(this.querySelectorAll(\'option:checked\'),e=>e.value))" {self._ATTRIBUTES}>{options}</select>')
 
     def get_value(self) -> list[T]:
@@ -218,7 +219,7 @@ class checkbox(Component[bool], config_name='checkbox'):
 
     def render(self) -> str:
         check_id = f'{self.id}-checkbox'
-        return self.wrap(f'<input type="checkbox" id="{check_id}" {"checked" if self.value else ""} onchange="flush(\'{self.id}\', this.checked)" {self._ATTRIBUTES}><label for="{check_id}">{self.text}</label>')
+        return self.wrap(f'<input type="checkbox" id="{check_id}" {"checked" if self.value else ""} onchange="flush(\'{self.id}\', this.checked)" {self._ATTRIBUTES}><label for="{check_id}">{python_html.escape(self.text)}</label>')
     
     def get_value(self) -> bool:
         x = self.value
@@ -239,7 +240,7 @@ class RadioComponent(Component[T], config_name='radio'):
         radio_name = self.id
 
         radios = [
-            f'<div {self._CONTAINER_ATTRIBUTES}><input {self._ATTRIBUTES} onchange="flush(\'{self.id}\', [{id(x)}, this.checked])" type="radio" name="{radio_name}" id="{id(x)}"><label for="{id(x)}">{x}</label></div>'
+            f'<div {self._CONTAINER_ATTRIBUTES}><input {self._ATTRIBUTES} onchange="flush(\'{self.id}\', [{id(x)}, this.checked])" type="radio" name="{radio_name}" id="{id(x)}"><label for="{id(x)}">{python_html.escape(str(x))}</label></div>'
             for x in self.options
         ]
 
@@ -318,7 +319,7 @@ class link(Component[None], config_name='link'):
         self.link = link
 
     def render(self) -> str:
-        return self.wrap(f'<a href={self.link}>{self.text}</a>')
+        return self.wrap(f'<a href={self.link}>{python_html.escape(self.text)}</a>')
 
 
 @component
