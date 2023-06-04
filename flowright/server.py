@@ -1,6 +1,6 @@
 from starlette.applications import Starlette
 from starlette.requests import Request
-from starlette.responses import HTMLResponse
+from starlette.responses import HTMLResponse, FileResponse
 from starlette.routing import Route, WebSocketRoute
 from starlette.websockets import WebSocket
 from starlette.endpoints import WebSocketEndpoint
@@ -18,6 +18,7 @@ import tempfile
 import json
 import shutil
 import watchfiles
+import re
 
 from typing import Optional, Any
 
@@ -32,8 +33,16 @@ with open(CLIENT_HTML_PATH, "r") as f:
     CLIENT_HTML = f.read()
 
 
-async def serve_client(request: Request) -> HTMLResponse:
-    return HTMLResponse(CLIENT_HTML)
+async def serve_client(request: Request) -> HTMLResponse | FileResponse:
+    url = request.path_params['url']
+    if not re.match(r'^static', url):
+        return HTMLResponse(CLIENT_HTML)
+    cwd = os.path.join(os.path.abspath(os.path.curdir), 'app')
+    static_file = os.path.join(cwd, url)
+    if not os.path.exists(static_file) or os.path.commonpath([static_file, cwd]) != cwd:
+        print('file does not exist:', static_file)
+        return HTMLResponse(status_code=404)
+    return FileResponse(static_file)
 
 
 class ServerHandler(WebSocketEndpoint):
