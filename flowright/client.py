@@ -290,7 +290,7 @@ class RenderQueue:
 def get_redirect(path: str, params: Optional[dict[str, Any]] = None) -> str:
     if params is None or len(params) == 0:
         return urllib.parse.quote(f'/{path}')
-    return f'/{urllib.parse.quote(path)}?' + '&'.join(f'{urllib.parse.quote(k)}={urllib.parse.quote(json.dumps(v))}' for k, v in params.items())
+    return f'{urllib.parse.quote(path)}?' + '&'.join(f'{urllib.parse.quote(k)}={urllib.parse.quote(json.dumps(v))}' for k, v in params.items())
 
 
 def redirect(path: str, params: Optional[dict[str, Any]] = None) -> None:
