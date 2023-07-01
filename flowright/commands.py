@@ -1,31 +1,70 @@
-import argparse
+import fire
 import subprocess
 import os
+import webbrowser
+import requests
+import time
+import pathlib
 
 # uvicorn --loop uvloop --reload --app-dir flowright server:app
 
-def run() -> None:
-    parse_args = argparse.ArgumentParser()
-    parse_args.add_argument("--reload", action="store_true", default=False, help='Automatically reload the page when a change is detected in the app.')
-    parse_args.add_argument("--dev-reload", action="store_true", default=False, help='Automatically reload the webserver when a change is detected in the library.')
-    parse_args.add_argument("--uds", metavar='PATH', required=False, default=None, help="Optional path to a unix domain socket to bind to.")
-    parse_args.add_argument("app_dir", default='.')
+def login() -> None:
+    flowright_url = os.environ.get('FLOWRIGHT_URL', 'http://localhost:3000')
+    flowright_api_url = os.environ.get('FLOWRIGHT_API_URL', 'http://localhost:8090')
+    # flowright_data_location = os.path.join(__file__, '..', 'flowright_data')
+    flowright_data_location = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'flowright_data')
+    print(f'Flowright data: {flowright_data_location}')
 
-    server_args = parse_args.parse_args()
+    r = requests.post(f'{flowright_api_url}/api/flowright/auth_link')
+    if not r.ok:
+        print('Error occurred creating auth flow!')
+        print(r.status_code, r.text)
+
+    challenge = r.json()['id']
+
+    webbrowser.open_new_tab(f'{flowright_url}/link?challenge={challenge}')
+
+    resolved = False
+    while not resolved:
+        r = requests.get(f'{flowright_api_url}/api/flowright/auth_link/{challenge}')
+        if r.ok:
+            resolved = True
+        time.sleep(1)
+
+    token = r.json()['current_client_jwt']
+
+    pathlib.Path(flowright_data_location).mkdir(parents=True, exist_ok=True)
+
+    with open(os.path.join(flowright_data_location, '.token'), 'w') as f:
+        f.write(token)
+
+def serve(app_dir: str, *, reload: bool = False, devreload: bool = False, uds: str | None = None) -> None:
     env = os.environ
 
+    # check path is valid
+    if not os.path.exists(app_dir) or not os.path.isdir(app_dir):
+        print(f'Invalid app directory: {app_dir}')
+        exit(1)
 
-    args = ["uvicorn", "--app-dir", "flowright", "--log-level", "debug"]
-    if server_args.dev_reload:
+    env['FLOWRIGHT_APP_DIR'] = os.path.abspath(app_dir)
+    args = ["uvicorn", "--app-dir", "flowright"]
+    if devreload:
         args.extend(["--reload"])
-    if server_args.reload:
+    if reload:
         env['FLOWRIGHT_RELOAD'] = 'True'
-    if server_args.uds is not None:
-        args.extend(["--uds", server_args.uds])
+    if uds is not None:
+        args.extend(["--uds", uds])
+
     args.extend(["server:app"])
-    print(args)
 
     try:
         subprocess.run(args, env=env)
     except KeyboardInterrupt:
         pass
+
+
+def run() -> None:
+    fire.Fire({
+        'login': login,
+        'serve': serve
+    })

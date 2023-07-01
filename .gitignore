@@ -2,3 +2,4 @@ app/
 poetry.lock
 venv/
 __pycache__/
+flowright/flowright_data

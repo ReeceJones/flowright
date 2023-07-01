@@ -26,7 +26,7 @@ while flow.running():
 
     flow.image("https://picsum.photos/500/300")
 
-    flow.graph(plt.plot(list(range(10)), list(range(10))))  # soon
+    flow.graph(plt.plot(list(range(10)), list(range(10))))  # soon maybe
 
     flow.divider()
 
