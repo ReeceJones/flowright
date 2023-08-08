@@ -4,6 +4,8 @@ import contextlib
 
 import html as python_html
 import markdown as python_markdown
+import base64
+import filetype
 
 from typing import Any, Generator, Iterable, TypeVar, Generic, Optional, overload, Union, Type
 
@@ -48,12 +50,21 @@ class divider(Component[None], config_name='divider'):
 
 @component
 class image(Component[None], config_name='image'):
-    def __init__(self, image_url: str) -> None:
-        super().__init__(image_url=image_url)
+    def __init__(self, image_url: str | None = None, image_data: bytes | None = None) -> None:
+        super().__init__(image_url=image_url, image_data=image_data)
         self.image_url = image_url
+        self.image_data = image_data
 
     def render(self) -> str:
-        return self.wrap(f'<img src="{self.image_url}" {self._ATTRIBUTES}>')
+        if self.image_url:
+            return self.wrap(f'<img src="{self.image_url}" {self._ATTRIBUTES}>')
+        elif self.image_data:
+            mimetype = filetype.image_match(self.image_data).mime
+            if not mimetype.startswith('image/'):
+                return self.wrap(f'<p {self._ATTRIBUTES}>Invalid image data</p>')
+            b64data = base64.b64encode(self.image_data).decode('utf-8')
+            return self.wrap(f'<img src="data:{mimetype};base64,{b64data}" alt="Could not display image" {self._ATTRIBUTES}>')
+        
 
 
 class TableComponent(Component[None], config_name='table'):

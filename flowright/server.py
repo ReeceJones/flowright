@@ -158,7 +158,7 @@ class ServerHandler(WebSocketEndpoint):
             if reload:
                 tg.create_task(self.detect_changes(script_name))
             
-            python_task = tg.create_task(asyncio.create_subprocess_shell(f"python3 {script_name}", shell=True, env=env))
+            python_task = tg.create_task(asyncio.create_subprocess_shell(f"python3 {script_name}", shell=True, env=env, cwd=os.path.dirname(script_name)))
             p = await python_task
             logging.info("Client terminated with return code:", p.returncode)
     
